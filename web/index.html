@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Registro como Proveedor | Periferia IT Group</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#19343b;background:#eff5f3}*{box-sizing:border-box}body{margin:0;padding:24px}main{max-width:950px;margin:auto;background:white;border-radius:20px;box-shadow:0 10px 36px #183f3830;overflow:hidden}header{padding:28px 32px;background:#174d49;color:white}h1{margin:0;font-size:28px}header p{opacity:.88;margin-bottom:0}.body{padding:24px 32px}.meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}.pill{border:1px solid #c8ddd5;padding:8px 12px;border-radius:10px;background:#f3faf7;font-size:13px}#historial{min-height:240px;max-height:440px;overflow-y:auto;border:1px solid #dbe7e2;border-radius:12px;padding:16px;background:#fbfdfc}.message{padding:12px 14px;margin:12px 0;border-radius:12px;white-space:pre-wrap;line-height:1.5;max-width:95%}.user{background:#e1edff;margin-left:10%}.bot{background:#edf5f0}.error{background:#ffe8e5}.tools{border-left:3px solid #177365;margin:6px 0 12px 18px;padding:7px 12px;background:#f3f9f6;font-size:13px}.tools summary{cursor:pointer;font-weight:600}.tool{padding:8px 0;border-bottom:1px solid #dce9e2;overflow-wrap:anywhere}.confirm{margin:12px 0;padding:14px;border:2px solid #d5a744;border-radius:12px;background:#fff8df}form{display:flex;gap:10px;margin-top:16px}input{flex:1;min-width:0;padding:14px;border:1px solid #a6c3b8;border-radius:9px;font-size:15px}button,select{padding:12px 15px;border:0;border-radius:9px;font:inherit}button{cursor:pointer;background:#176655;color:white}button:disabled{opacity:.6;cursor:wait}.secondary{background:#edf5f0;color:#174d49;border:1px solid #abc9bd}.danger{background:#a53a37}.downloads{border-top:1px solid #e1eae7;margin-top:20px;padding-top:16px}.downloads a{display:inline-block;margin:5px;padding:9px 12px;border:1px solid #8db6aa;border-radius:8px;color:#185948;text-decoration:none;font-size:14px}.hint{color:#5e756f;font-size:13px}.buttons{display:flex;gap:9px;flex-wrap:wrap}#thinking{color:#176655;font-size:14px;padding:12px}select{border:1px solid #a8c2b8;background:white;max-width:100%}@media(max-width:560px){body{padding:0}main{border-radius:0}header,.body{padding:20px}h1{font-size:23px}form{flex-wrap:wrap}form input{flex-basis:100%}#historial{max-height:480px}}
+</style></head><body><main><header><h1>Registro como Proveedor</h1><p>Agente conversacional · Reto técnico 01 · Datos ficticios</p></header><div class="body">
+<div class="meta"><span id="status" class="pill">Comprobando servidor…</span><select id="caso"><option value="">Selecciona un caso</option></select></div>
+<div id="historial" aria-live="polite"><div class="message bot">Selecciona un caso o escríbeme: «Procesa ec-corp-andina». Mostraré los campos, faltantes, soportes, herramientas ejecutadas y los archivos de salida.</div></div>
+<div id="thinking" hidden>Procesando solicitud y verificando los documentos…</div>
+<div id="confirm" class="confirm" hidden><strong>Se requiere confirmación humana</strong><p>Esta acción solo genera un archivo de ENVÍO SIMULADO. No firma ni envía nada.</p><div class="buttons"><button id="yes">Confirmo simular envío</button><button id="no" class="danger">Cancelar</button></div></div>
+<form id="chat"><input id="message" maxlength="1000" required autocomplete="off" placeholder="Procesa el caso ec-corp-andina"><button id="send" type="submit">Enviar</button></form>
+<div class="buttons" style="margin-top:12px"><button id="suggest" class="secondary" type="button">Procesar caso seleccionado</button><button id="reset" class="secondary" type="button">Sesión nueva</button></div>
+<section class="downloads"><h3>Archivos generados</h3><div id="files" class="hint">Procesa un caso para habilitar descargas: formulario, paquete ZIP y checklist.</div><p class="hint">Los datos pertenecen al fixture entregado para la evaluación. Sin credenciales ni información real.</p></section>
+</div></main><script>
+let sessionId = crypto.randomUUID().replace(/-/g,''); let pending=false;const $=id=>document.getElementById(id);
+function show(text,kind='bot'){const d=document.createElement('div');d.className='message '+kind;d.textContent=text;$('historial').appendChild(d);$('historial').scrollTop=$('historial').scrollHeight}
+function toolsView(rows){if(!rows?.length)return;const box=document.createElement('details');box.className='tools';box.open=true;const title=document.createElement('summary');title.textContent=`Herramientas ejecutadas (${rows.length})`;box.append(title);for(const x of rows){const div=document.createElement('div');div.className='tool';div.textContent=`${x.ok?'✓':'✕'} ${x.name} · ${x.source} · ${x.summary}`;box.append(div)}$('historial').append(box)}
+async function downloadLinks(caso){
+  const wrap=$('files');
+  wrap.textContent='Comprobando archivos disponibles…';
+  const nombres=['formulario.xlsx','formulario.pdf','valores-portal.md','faltantes.md','paquete.zip','ENVIO-SIMULADO.md'];
+  const disponibles=await Promise.all(nombres.map(async nombre=>{
+    const url=`/api/download/${encodeURIComponent(caso)}/${encodeURIComponent(nombre)}`;
+    try {
+      const respuesta=await fetch(url,{method:'HEAD',cache:'no-store'});
+      return respuesta.ok?{nombre,url}:null;
+    } catch {return null;}
+  }));
+  wrap.replaceChildren();
+  const archivos=disponibles.filter(Boolean);
+  if(!archivos.length){
+    wrap.textContent='Todavía no hay archivos disponibles. Procesa el caso para generarlos.';
+    return;
+  }
+  const aviso=document.createElement('p');
+  aviso.className='hint';
+  aviso.textContent=`Archivos disponibles para ${caso}:`;
+  wrap.append(aviso);
+  for(const {nombre,url} of archivos){
+    const a=document.createElement('a');
+    a.href=url;
+    a.textContent=nombre;
+    a.download=nombre;
+    wrap.append(a);
+  }
+}
+async function send(message){if(!message.trim())return;$('send').disabled=true;$('thinking').hidden=false;$('confirm').hidden=true;show(message,'user');try{const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId,message})});const raw=await response.text();let data;try{data=JSON.parse(raw)}catch{throw new Error('El servicio devolvió una respuesta inesperada; verifica Render Logs.')}if(!response.ok)throw new Error(data.error||'Error de servidor');show(data.reply);toolsView(data.toolCalls);pending=!!data.needsConfirmation;$('confirm').hidden=!pending;const found=message.toLowerCase().match(/(co-industrias-delta|ec-corp-andina|hn-agroexport-sula|pa-logistica-istmo)/);if(found)downloadLinks(found[1]);else if($('caso').value)downloadLinks($('caso').value)}catch(e){show('No fue posible completar la consulta: '+e.message,'error')}finally{$('thinking').hidden=true;$('send').disabled=false;}}
+$('chat').addEventListener('submit',e=>{e.preventDefault();const txt=$('message').value;$('message').value='';void send(txt)});
+$('yes').addEventListener('click',()=>{void send('confirmo')});$('no').addEventListener('click',()=>{void send('cancelar')});
+$('suggest').addEventListener('click',()=>{const value=$('caso').value;if(value)void send('Procesa el caso '+value);else show('Selecciona primero uno de los casos disponibles.','error')});
+$('reset').addEventListener('click',()=>{sessionId=crypto.randomUUID().replace(/-/g,'');pending=false;$('historial').replaceChildren();$('confirm').hidden=true;$('files').textContent='Procesa un caso para habilitar las descargas.';show('Nueva sesión iniciada. Selecciona un caso.')});
+async function boot(){try{const [health,cases]=await Promise.all([fetch('/api/health').then(x=>x.json()),fetch('/api/cases').then(x=>x.json())]);$('status').textContent=`Servidor activo · ${health.provider}: ${health.model}`;for(const c of cases.casos){const option=document.createElement('option');option.value=c;option.textContent=c;$('caso').append(option)}}catch{$('status').textContent='Servicio no disponible. Comprueba el despliegue.'}}
+void boot();
+</script></body></html>
